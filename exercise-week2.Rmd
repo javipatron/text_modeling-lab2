@@ -5,10 +5,10 @@ date: "2023-04-10"
 output: html_document
 ---
 
-
 ## Text Analysis
 
 ```{r}
+# Load in the libraries
 library(tidytext)
 library(tidyverse)
 library(here)
@@ -17,18 +17,19 @@ library(here)
 
 ```{r}
 
-setwd("/Users/javipatron/Documents/MEDS/Courses/eds231/spring_text")
+# Set the working directory and create a table that contains the text from each file
+setwd("/Users/javipatron/Documents/MEDS/Courses/eds231/text_modeling-lab2/spring_text")
 
 tbl <- list.files() |> 
   map_chr(~read_file((.))) 
 
 x <- tibble(text = tbl)
 
-
 ```
 
 
 ```{r}
+# Create a new table that has
 text_words <- x |> 
   unnest_tokens(word, text)
 ```
@@ -59,15 +60,12 @@ text_words <- text_words |>
 
 
 ```{r}
-
-bing_sent <- get_sentiments("bing") |> 
-  inner_join()
-
+# Load the bing data
+bing_sent <- get_sentiments("bing") 
 dim(bing_sent)
 
 
-# Add the positive or negative informtaion from "bing
-
+# Add the positive or negative information from "bing
 text_words |> 
   inner_join(bing_sent)
 
@@ -82,7 +80,6 @@ nrc_joy <- get_sentiments("nrc") |>
 text_words |> 
   inner_join(nrc_joy) |> 
   count(word, sort = T)
-
 
 ```
 
