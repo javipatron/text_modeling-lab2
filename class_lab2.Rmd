@@ -126,8 +126,7 @@ nrc_sent <- get_sentiments("nrc")
 nrc_word_count <- text_words |> 
   anti_join(stop_words, by= "word") |> 
   inner_join(nrc_sent) |> 
-  count(word, sentiment, sort = T)
-
+  count(word, sentiment, sort = T) 
 ```
 
 
