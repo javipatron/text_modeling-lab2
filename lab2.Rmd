@@ -1,4 +1,4 @@
----
+1---
 title: "Lab 2"
 author: "Javier Patrón"
 date: "April 17th 2023"
@@ -58,9 +58,9 @@ my_files <- list.files(pattern = ".docx",
 text_dat <- lnt_read(my_files)
 ```
 
-#### 5. This time use the full text of the articles for the analysis. First clean any artifacts of the data collection process (hint: this type of thing should be removed: "Apr 04, 2022 (Biofuels Digest: <http://www.biofuelsdigest.com/> Delivered by Newstex"))
+#### 5. This time use the full text of the articles for the analysis. First clean any artifacts of the data collection process (hint: this type of thing should be removed: "Apr 04, 2022 (Biofuels Digest: <http://www.biofuelsdigest.com/> Delivered by Newstex")) 
 
-### INCOMPLETE
+It appears that the composition of the text is not being impacted by any artifacts in this particular section, so im going to leave the tibbles as they come.
 
 #### 6. Explore your data a bit and replicate the analyses above presented in class (Lab2)
 
@@ -199,32 +199,19 @@ words_time <- text_words |>
 ```
 
 ```{r}
-# Compute the proportion of each category
-nrc_proportions <- words_time %>%
-  count(nrc) %>%
-  mutate(proportion = n / sum(n))
-
-nrc_proportions %>%
-  mutate(proportion = sprintf("%.2f%%", proportion * 100)) %>% # Multiply by 100 and format as percentage
-  kable(format = "html", align = "c") %>%
-  kable_styling(full_width = F, 
-                bootstrap_options = "striped", 
-                position = "center", 
-                font_size = 16)
-
-# Create a pie chart using ggplot2
-ggplot(words_time, aes(x = "", y = 1, fill = nrc)) +
-  geom_bar(width = 1, stat = "identity") +
-  coord_polar("y", start = 0) +
-  theme_void() +
-  labs(title = "Pie chart of NRC categories") +
-  theme(title = element_text(face = "bold", size = 18))
-
+colors <- c("positive" = "green", 
+            "anticipation" = "cyan2", 
+            "joy" = "pink", 
+            "trust" = "coral",
+            "negative" = "red", 
+            "sadness" = "gray30", 
+            "anger" = "darkorchid3", 
+            "disgust" = "black",
+            "fear" = "darkred", 
+            "surprise" = "gold")
 ```
 
 ```{r}
-library(ggplot2)
-
 words_time %>%
   filter(date >= as.Date("2021-1-1")) |> 
   group_by(date) %>%
@@ -249,5 +236,71 @@ words_time %>%
                             as.Date("2023-04-16"), by = "1 month"))
 
 ```
+This plot above shows the overall sentiment per day, based on sentiment analysis using the Bing lexicon classification method. The sentiment score is aggregated for each day by summing the scores of individual words analyzed that day, and the resulting plot shows the trend in sentiment over time. The x-axis shows the date range from January 1st, 2021 to April 16th, 2023, and the y-axis shows the sentiment score. The plot suggests that there have been fluctuations in sentiment over time, with both positive and negative trends observed during the period analyzed.
 
-The plot shows the overall sentiment per day, based on sentiment analysis using the Bing lexicon classification method. The sentiment score is aggregated for each day by summing the scores of individual words analyzed that day, and the resulting plot shows the trend in sentiment over time. The x-axis shows the date range from January 1st, 2021 to April 16th, 2023, and the y-axis shows the sentiment score. The plot suggests that there have been fluctuations in sentiment over time, with both positive and negative trends observed during the period analyzed.
+```{r, warning = F}
+words_time |> 
+  filter(nrc %in% c("anticipation", "joy", "trust", "sadness", "anger", "disgust" ,"fear", "surprise")) |> 
+  group_by(date, nrc) |> 
+  summarise(word_appearance = n()) |> 
+  ungroup() |> 
+  group_by(date) |> 
+  mutate(tot_appearance = sum(word_appearance)) |> 
+  mutate(proportion = word_appearance/tot_appearance) |> 
+  ggplot(aes(x=date, y= proportion, color = nrc)) +
+  geom_line(alpha = 0.2) +
+  geom_smooth(method = "loess",
+              se = F,
+              span = 0.5,
+              alpha = 0.4) +
+  labs(x = "Date", 
+       y = "Sentiment Proportion", 
+       color = "NRC Sentiment", 
+       title = "Sentiment Proportion over Time", 
+       subtitle = "NRC word classification", 
+       caption = "Source: library.ucsb ") 
+
+```
+
+The plot above displays the distribution of NRC sentiments used over time, enabling an examination of any potential correlations. To enhance clarity, I have removed the `postive`, and `negative` sentiments, and used the geom_smooth() function to create trend lines that are easier to interpret. This is particularly useful due to the recent high influx of articles related to blue carbon, which can make the line graphs difficult to decipher. Nevertheless, I have made these lines transparent (alpha = 0.2) in the background to ensure that the trends remain visible. Upon analyzing the plot, two significant trends become apparent: surprise is consistently low, while trust and sadness are consistently high.
+
+Below, you can see the total distribution of sentiments across our database.
+```{r}
+# Compute the proportion of each category
+nrc_proportions <- words_time %>%
+  count(nrc) %>%
+  mutate(proportion = n / sum(n))
+
+nrc_proportions %>%
+  mutate(proportion = sprintf("%.2f%%", proportion * 100)) %>% # Multiply by 100 and format as percentage
+  kable(format = "html", align = "c") %>%
+  kable_styling(full_width = F, 
+                bootstrap_options = "striped", 
+                position = "center", 
+                font_size = 16)
+
+```
+
+
+```{r, warning = F}
+words_time %>%
+  group_by(date, nrc) %>%
+  summarise(appearance = n()) %>%
+  group_by(nrc) %>%
+  mutate(cum_appearance = cumsum(appearance)) %>%
+  ungroup() %>%
+  arrange(desc(cum_appearance)) |> 
+  ggplot(aes(x = date, y = cum_appearance, color = nrc)) +
+  geom_line(alpha = 0.8) +
+   scale_color_manual(values = colors) +
+  labs(x = "Date", 
+       y = "Cumulative Appearances", 
+       color = "NRC Sentiment", 
+       title = "Sentiment Cumulative Analysis over Time", 
+       subtitle = "NRC classification", 
+       caption = "Source: library.ucsb ")
+
+```
+In the above graph, I have calculated a cumulative score for each sentiment to gain insight into the overall trends of words and vibes used in the articles. This plot also highlights the high influx of articles in recent years. As anticipated, the positive and negative sentiments have the highest scores, but the positive line surpasses the negative line by a significant margin. Additionally, there are noteworthy correlations between certain words and the sentiments of trust, joy, and sadness, which have seen increased usage in recent times. Conversely, surprise and disgust are used less frequently, representing the less common sentiments.
+
+
